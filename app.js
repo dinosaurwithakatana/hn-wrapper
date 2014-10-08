@@ -7,13 +7,13 @@ var get = Rx.Observable.fromNodeCallback(request);
 var getTopStories = function(maxStories){
     get(rootUrl + version + '/topstories.json')
     .map(function(res){
-        return res[1];
+        return res[1];  // get the body
      })
     .map(function(res){
-        return JSON.parse(res);
+        return JSON.parse(res);     //turn it into a json object
     })
     .map(function(res){
-        return res.slice(0, maxStories);
+        return res.slice(0, maxStories);    //slice to requested stories
     })
     .subscribe(
             function (x) {
