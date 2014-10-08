@@ -1,19 +1,30 @@
+var request = require('request');
 var Rx = require('rx');
 var rootUrl = 'https://hacker-news.firebaseio.com';
 var version = '/v0'
+var get = Rx.Observable.fromNodeCallback(request);
 
-var topStories = [];
-var requestStream = Rx.Observable.returnValue(rootUrl+version);
-requestStream.subscribe(function(requestUrl){
-    var responseStream = Rx.Observable.create(function (observer) {
-        jQuery.getJSON('/topstories')
-            .done(function (response) { observer.onNext(response); })
-            .fail(function(jqXHR, status, error) { observer.onError(error); })
-            .always(function() {observer.onCompleted(); })
-    });
+var getTopStories = function(maxStories){
+    get(rootUrl + version + '/topstories.json')
+    .map(function(res){
+        return res[1];
+     })
+    .map(function(res){
+        return JSON.parse(res);
+    })
+    .map(function(res){
+        return res.slice(0, maxStories);
+    })
+    .subscribe(
+            function (x) {
+                console.log(x);
+            },
+            function (err) {
+                console.log('Error:  ' + err);
+            },
+            function () {
+            }
+    );
+}
 
-    responseStream.subscribe(function (data){
-        console.log(data);
-    });
-
-});
+getTopStories(5);

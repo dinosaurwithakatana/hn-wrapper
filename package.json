@@ -15,6 +15,7 @@
   "author": "Vishnu",
   "license": "MIT",
   "dependencies": {
+    "request": "^2.45.0",
     "rx": "^2.3.12"
   }
 }
