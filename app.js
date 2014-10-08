@@ -10,21 +10,32 @@ var getTopStories = function(maxStories){
         return res[1];  // get the body
      })
     .map(function(res){
-        return JSON.parse(res);     //turn it into a json object
+        return JSON.parse(res);     //turn it into a object
+    })
+    .flatMap(function(res) {
+        return Rx.Observable.fromArray(res);    //map each of the story item ids into an observable
+    })
+    .take(maxStories)       //take the max
+    .flatMap(function(res){
+        return get(rootUrl + version + '/item/' + res + '.json');   // make the details call on each response
     })
     .map(function(res){
-        return res.slice(0, maxStories);    //slice to requested stories
+        return res[1];  // get the body     
+     })
+    .map(function(res){
+        return JSON.parse(res);     //turn it into a object
     })
     .subscribe(
             function (x) {
-                console.log(x);
+                console.log(x.title);
             },
             function (err) {
                 console.log('Error:  ' + err);
             },
             function () {
+                console.log('Complete');
             }
     );
 }
 
-getTopStories(5);
+getTopStories(10);
