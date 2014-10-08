@@ -1,0 +1,22 @@
+{
+  "name": "hackernews-firebase-api",
+  "version": "1.0.0",
+  "description": "wrapper around official hacker news api",
+  "main": "app.js",
+  "scripts": {
+    "test": "node app.js"
+  },
+  "keywords": [
+    "hacker",
+    "news",
+    "firebase",
+    "node"
+  ],
+  "author": "Vishnu",
+  "license": "MIT",
+  "dependencies": {
+    "firebase": "^1.1.0",
+    "jquery": "^2.1.1",
+    "rx": "^2.3.12"
+  }
+}
