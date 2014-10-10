@@ -38,7 +38,6 @@ function getTopStories(req, res, next){
                 console.log('Error:  ' + err);
             },
             function () {
-                console.dir(topStories[0].title);
                 res.send(topStories);
             }
     );
