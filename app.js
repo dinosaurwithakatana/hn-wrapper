@@ -58,6 +58,54 @@ var server = restify.createServer({
 server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
+function getComments(parentStoryID, startDepth, endDepth)
+{
+	// request parent story
+	// grab 'kids' field from parent story response
+	// the field from part 2 contains depth 0 comments
+	// for each kid, request the item and recurse as far as endDepth param specifies
+	var arr = []
+	getItem(parentStoryID)
+		.map(function(parsedJSON){
+			// have a parent comment here
+			return parsedJSON['kids']
+		})
+		.flatMap(function(kids){
+			// returning an observable for each 'kid' in the kids array
+			return Rx.Observable.fromArray(kids)
+		})
+		.flatMap(function(kid){
+			// kid is an id so get item on it
+			return getItem(kid)
+		})
+		// have an observable from getItem(...) here
+		.subscribe(
+				function(parsedJSONKid){
+					arr[arr.length] = parsedJSONKid
+				},
+				function(error){
+					console.log(error)
+				},
+				function(){
+					console.log("Complete")
+					console.dir("arr: " + arr)
+				}
+		);
+}
+
+function getItem(itemID)
+{
+	return get(rootUrl+version+'/item/'+itemID+'.json')
+	.map(function(res){
+		return res[1]
+	})
+	.map(function(rawJSON){
+		return JSON.parse(rawJSON)
+	});
+}
+
+//getTopStories(10);
+getComments('8863', 0, 0)
 
 server.get('/getTopStories', getTopStories); 
 var port = process.env.PORT || 5000;
