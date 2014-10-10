@@ -43,25 +43,44 @@ function getComments(parentStoryID, startDepth, endDepth)
 	// grab 'kids' field from parent story response
 	// the field from part 2 contains depth 0 comments
 	// for each kid, request the item and recurse as far as endDepth param specifies
-	console.log(getItem(parentStoryID));
+	var arr = []
+	getItem(parentStoryID)
+		.map(function(parsedJSON){
+			// have a parent comment here
+			return parsedJSON['kids']
+		})
+		.flatMap(function(kids){
+			// returning an observable for each 'kid' in the kids array
+			return Rx.Observable.fromArray(kids)
+		})
+		.flatMap(function(kid){
+			// kid is an id so get item on it
+			return getItem(kid)
+		})
+		// have an observable from getItem(...) here
+		.subscribe(
+				function(parsedJSONKid){
+					arr[arr.length] = parsedJSONKid
+				},
+				function(error){
+					console.log(error)
+				},
+				function(){
+					console.log("Complete")
+					console.dir("arr: " + arr)
+				}
+		);
 }
 
 function getItem(itemID)
 {
-	get(rootUrl+version+'/item/'+itemID+'.json')
+	return get(rootUrl+version+'/item/'+itemID+'.json')
 	.map(function(res){
 		return res[1]
 	})
-	.subscribe(
-		function(rawJSON){
-			console.log('RAW JSON')
-			return JSON.parse(rawJSON)
-		},
-		function(error){
-			console.log('ERROR')
-			return err
-		}
-	);
+	.map(function(rawJSON){
+		return JSON.parse(rawJSON)
+	});
 }
 
 //getTopStories(10);
