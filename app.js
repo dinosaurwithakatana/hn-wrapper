@@ -55,7 +55,7 @@ function getTopStories(req, res, next){
 }
 
 var server = restify.createServer({
-  name: 'myapp',
+  name: 'hn-wrapper',
   version: '1.0.0'
 });
 server.use(restify.acceptParser(server.acceptable));
@@ -63,6 +63,10 @@ server.use(restify.queryParser());
 server.use(restify.bodyParser());
 
 server.get('/getTopStories', getTopStories); 
+server.get(/.*/, restify.serveStatic({
+    'directory': '.',
+    'default': 'index.html'
+}));
 var port = process.env.PORT || 5000;
 server.listen(port, function () {
   console.log('%s listening at %s', server.name, server.url);
