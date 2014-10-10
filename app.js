@@ -9,6 +9,14 @@ function getTopStories(req, res, next){
     var topStories = [];
     var fromStory = req.query.fromStory;
     var toStory = req.query.toStory;
+    if(!fromStory){
+        fromStory = 0;
+    }
+
+    if(!toStory){
+        toStory = 100;
+    }
+
     get(rootUrl + version + '/topstories.json')
     .map(function(res){
         return res[1];  // get the body
