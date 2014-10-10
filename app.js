@@ -53,6 +53,7 @@ server.use(restify.queryParser());
 server.use(restify.bodyParser());
 
 server.get('/getTopStories', getTopStories); 
-server.listen(80, function () {
+var port = process.env.PORT || 5000;
+server.listen(port, function () {
   console.log('%s listening at %s', server.name, server.url);
 });
