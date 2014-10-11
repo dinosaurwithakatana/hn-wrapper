@@ -64,51 +64,68 @@ function getComments(parentStoryID, startDepth, endDepth)
 	// grab 'kids' field from parent story response
 	// the field from part 2 contains depth 0 comments
 	// for each kid, request the item and recurse as far as endDepth param specifies
-	var arr = []
-	getItem(parentStoryID)
+	return Rx.Observable.create(function(observer){
+		var nextID = ''
+		getItem(parentStoryID)
 		.map(function(parsedJSON){
-			// have a parent comment here
 			return parsedJSON['kids']
 		})
 		.flatMap(function(kids){
-			// returning an observable for each 'kid' in the kids array
 			return Rx.Observable.fromArray(kids)
 		})
-		.flatMap(function(kid){
-			// kid is an id so get item on it
-			return getItem(kid)
-		})
-		// have an observable from getItem(...) here
 		.subscribe(
-				function(parsedJSONKid){
-					arr[arr.length] = parsedJSONKid
+			function(onNextValue){
+				observer.onNext(onNextValue)
+				nextID = onNextValue
+			},
+			function(error){
+
+			},
+			function(){
+				getComments(nextID, startDepth++, endDepth)
+			}
+		);
+	});
+}
+function getItem(itemID){
+	return Rx.Observable.create(function(observer){
+		get(rootUrl+version+'/item/'+itemID+'.json')
+			.map(function(res){
+				return res[1]
+			})
+			.map(function(rawJSON){
+				return JSON.parse(rawJSON)
+			})
+			.subscribe(
+				function(onNextValue) {
+					observer.onNext(onNextValue)
 				},
 				function(error){
 					console.log(error)
+					observer.error(error)
 				},
 				function(){
-					console.log("Complete")
-					console.dir("arr: " + arr)
+					observer.onCompleted()
 				}
-		);
-}
-
-function getItem(itemID)
-{
-	return get(rootUrl+version+'/item/'+itemID+'.json')
-	.map(function(res){
-		return res[1]
-	})
-	.map(function(rawJSON){
-		return JSON.parse(rawJSON)
-	});
+			);
+	});	
 }
 
 //getTopStories(10);
-getComments('8863', 0, 0)
-
-server.get('/getTopStories', getTopStories); 
-var port = process.env.PORT || 5000;
-server.listen(port, function () {
-  console.log('%s listening at %s', server.name, server.url);
-});
+getComments('8863', 0, 2)
+.subscribe(
+		function(onNextValue){
+			console.log(onNextValue)
+		},
+		function(error){
+			console.log(error)
+		},
+		function(){
+			console.log("complete")
+		}
+);
+//server.get('/getTopStories', getTopStories); 
+//var port = process.env.PORT || 5000;
+//server.listen(port, function () {
+//  console.log('%s listening at %s', server.name, server.url);
+//});
