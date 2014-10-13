@@ -51,79 +51,75 @@ function getTopStories(req, res, next){
     );
 }
 
-var server = restify.createServer({
+/*var server = restify.createServer({
   name: 'myapp',
   version: '1.0.0'
 });
 server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
-server.use(restify.bodyParser());
-function getComments(parentStoryID, startDepth, endDepth)
-{
+server.use(restify.bodyParser());*/
+
+function getComments_helper(comment, startDepth, endDepth){
+	return getItemKids(comment)
+		.flatMap(function(subID){
+			console.log(subID)
+			return getItem(subID)
+		})
+		.flatMap(function(comment){
+			return getComments_helper(comment.id, startDepth++, endDepth)
+		})
+}
+
+function getComments(parentStoryID, startDepth, endDepth){
 	// request parent story
 	// grab 'kids' field from parent story response
 	// the field from part 2 contains depth 0 comments
 	// for each kid, request the item and recurse as far as endDepth param specifies
-	return Rx.Observable.create(function(observer){
-		var nextID = ''
-		getItem(parentStoryID)
-		.map(function(parsedJSON){
-			return parsedJSON['kids']
+	//	var arr = []
+	return getItemKids(parentStoryID)
+		.flatMap(function(item){
+			return getItem(item)				
 		})
-		.flatMap(function(kids){
-			return Rx.Observable.fromArray(kids)
+		.flatMap(function(item){
+			return getComments_helper(item.id, startDepth, endDepth)
 		})
-		.subscribe(
-			function(onNextValue){
-				observer.onNext(onNextValue)
-				nextID = onNextValue
-			},
-			function(error){
-
-			},
-			function(){
-				getComments(nextID, startDepth++, endDepth)
-			}
-		);
-	});
 }
+
+function getItemKids(itemID){
+	return getItem(itemID)
+			.map(function(parsedJSON){
+				return parsedJSON['kids']
+			})
+			.flatMap(function(kids){
+				return Rx.Observable.fromArray(kids)
+			})
+}
+
 function getItem(itemID){
-	return Rx.Observable.create(function(observer){
-		get(rootUrl+version+'/item/'+itemID+'.json')
-			.map(function(res){
-				return res[1]
-			})
-			.map(function(rawJSON){
-				return JSON.parse(rawJSON)
-			})
-			.subscribe(
-				function(onNextValue) {
-					observer.onNext(onNextValue)
-				},
-				function(error){
-					console.log(error)
-					observer.error(error)
-				},
-				function(){
-					observer.onCompleted()
-				}
-			);
-	});	
+	return get(rootUrl+version+'/item/'+itemID+'.json')
+		.map(function(res){
+			return res[1]
+		})
+		.map(function(rawJSON){
+			return JSON.parse(rawJSON)
+		})
 }
 
 //getTopStories(10);
+var arr = []
 getComments('8863', 0, 2)
-.subscribe(
+	.subscribe(
 		function(onNextValue){
 			console.log(onNextValue)
+			arr[arr.length]=onNextValue;
 		},
 		function(error){
-			console.log(error)
+
 		},
 		function(){
-			console.log("complete")
+			console.log(arr.length)
 		}
-);
+	);
 //server.get('/getTopStories', getTopStories); 
 //var port = process.env.PORT || 5000;
 //server.listen(port, function () {
