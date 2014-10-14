@@ -59,36 +59,27 @@ server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 server.use(restify.bodyParser());*/
 
-function getComments_helper(comment, startDepth, endDepth){
-	return getItemKids(comment)
-		.flatMap(function(subID){
-			console.log(subID)
-			return getItem(subID)
-		})
-		.flatMap(function(comment){
-			return getComments_helper(comment.id, startDepth++, endDepth)
-		})
-}
-
-function getComments(parentStoryID, startDepth, endDepth){
+function getComments(parentStoryID, arr, startDepth, endDepth){
 	// request parent story
 	// grab 'kids' field from parent story response
 	// the field from part 2 contains depth 0 comments
 	// for each kid, request the item and recurse as far as endDepth param specifies
-	//	var arr = []
 	return getItemKids(parentStoryID)
 		.flatMap(function(item){
 			return getItem(item)				
 		})
-		.flatMap(function(item){
-			return getComments_helper(item.id, startDepth, endDepth)
+		.expand(function(item){
+			if (!arr[item.id])
+				arr[item.id]=item
+			return getComments(item.id, arr, startDepth, endDepth)
 		})
 }
 
 function getItemKids(itemID){
 	return getItem(itemID)
 			.map(function(parsedJSON){
-				return parsedJSON['kids']
+				var kids = parsedJSON['kids']
+				return (kids) ? kids : []
 			})
 			.flatMap(function(kids){
 				return Rx.Observable.fromArray(kids)
@@ -104,22 +95,24 @@ function getItem(itemID){
 			return JSON.parse(rawJSON)
 		})
 }
-
-//getTopStories(10);
 var arr = []
-getComments('8863', 0, 2)
-	.subscribe(
-		function(onNextValue){
-			console.log(onNextValue)
-			arr[arr.length]=onNextValue;
-		},
-		function(error){
-
-		},
-		function(){
-			console.log(arr.length)
-		}
-	);
+getComments('8863', arr, 0, 2)
+    .subscribe(
+    	function(onNextValue){
+    	
+    	},
+    	function(error){
+    		console.log("Error: "+error)
+    	},
+    	function(){
+    		console.log("Complete")
+    		var unsparseArray = []
+    		arr.map(function(validItem){
+    			unsparseArray[unsparseArray.length]=validItem
+    		})
+    		console.log("unsparseArray Length: " + unsparseArray.length)
+    	}
+    )
 //server.get('/getTopStories', getTopStories); 
 //var port = process.env.PORT || 5000;
 //server.listen(port, function () {
