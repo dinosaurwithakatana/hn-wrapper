@@ -68,7 +68,7 @@ function getComments(parentStoryID, arr, startDepth, endDepth){
 		.flatMap(function(item){
 			return getItem(item)				
 		})
-		.expand(function(item){
+		.flatMap(function(item){
 			if (!arr[item.id])
 				arr[item.id]=item
 			return getComments(item.id, arr, startDepth, endDepth)
