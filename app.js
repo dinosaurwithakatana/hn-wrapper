@@ -59,19 +59,36 @@ server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 server.use(restify.bodyParser());*/
 
-function getComments(parentStoryID, arr, startDepth, endDepth){
+function getComments(parentStoryID, startDepth, endDepth){
 	// request parent story
 	// grab 'kids' field from parent story response
 	// the field from part 2 contains depth 0 comments
 	// for each kid, request the item and recurse as far as endDepth param specifies
+	var commentsArr = []
 	return getItemKids(parentStoryID)
+		// have an array of observables with subcomment id's
+		// get item for the id
 		.flatMap(function(item){
 			return getItem(item)				
 		})
-		.flatMap(function(item){
-			if (!arr[item.id])
-				arr[item.id]=item
-			return getComments(item.id, arr, startDepth, endDepth)
+		// for the item, get the subcomments
+		.flatMap(function(parsedItem){
+			var kids = parsedItem.kids;
+			// if item has kids, fetch kids
+			if (kids){
+				var kidsArr = []
+				kids.map(function(element){
+					console.log(element)
+					console.log(kids)
+					kidsArr[kidsArr.length] = getComments(element, startDepth++, endDepth)
+					parsedItem.kids = kidsArr
+				})
+			}
+
+			// parsed item is a item that may or maynot have kids
+			// append this item to comments arr
+			commentsArr[commentsArr.length] = parsedItem
+			return Rx.Observable.return(commentsArr)
 		})
 }
 
@@ -95,24 +112,23 @@ function getItem(itemID){
 			return JSON.parse(rawJSON)
 		})
 }
+
 var arr = []
 getComments('8863', arr, 0, 2)
-    .subscribe(
-    	function(onNextValue){
-    	
-    	},
-    	function(error){
-    		console.log("Error: "+error)
-    	},
-    	function(){
-    		console.log("Complete")
-    		var unsparseArray = []
-    		arr.map(function(validItem){
-    			unsparseArray[unsparseArray.length]=validItem
-    		})
-    		console.log("unsparseArray Length: " + unsparseArray.length)
-    	}
-    )
+		    .subscribe(
+		    	function(onNextValue){
+		    	 	arr = onNextValue
+		    	},
+		    	function(error){
+		    		console.log("Error: "+error)
+		    	},
+		    	function(){
+		    		console.log("Complete")
+		    		//console.log(arr)
+		    	}
+		    )
+
+
 //server.get('/getTopStories', getTopStories); 
 //var port = process.env.PORT || 5000;
 //server.listen(port, function () {
