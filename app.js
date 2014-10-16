@@ -60,36 +60,44 @@ server.use(restify.queryParser());
 server.use(restify.bodyParser());*/
 
 function getComments(parentStoryID, startDepth, endDepth){
-	// request parent story
-	// grab 'kids' field from parent story response
-	// the field from part 2 contains depth 0 comments
-	// for each kid, request the item and recurse as far as endDepth param specifies
 	var commentsArr = []
-	return getItemKids(parentStoryID)
-		// have an array of observables with subcomment id's
+	return Rx.Observable.create(function(observer){
+		getItemKids(parentStoryID)
+		// have an fromArrayy of observables with subcomment id's
 		// get item for the id
 		.flatMap(function(item){
 			return getItem(item)				
 		})
-		// for the item, get the subcomments
-		.flatMap(function(parsedItem){
-			var kids = parsedItem.kids;
-			// if item has kids, fetch kids
-			if (kids){
-				var kidsArr = []
-				kids.map(function(element){
-					console.log(element)
-					console.log(kids)
-					kidsArr[kidsArr.length] = getComments(element, startDepth++, endDepth)
-					parsedItem.kids = kidsArr
-				})
+		// flatmap projects function onto each element in arr and returns a single
+		// observable sequence 
+		.subscribe(
+			// onNextValue should have a parsed kids
+			// for the parsed item, get the subcomments arr
+			function(onNextValue){
+				// map each of the elements on kids of 
+				if (onNextValue){
+					var valKids = onNextValue.kids;
+					if (valKids){
+						var kidsArr = []					
+						valKids.map(function(element){
+							var item = getComments(parseInt(element.id), startDepth++, endDepth)
+							kidsArr[kidsArr.length] = item
+						})	
+						// add the onNextValue to commentsArr
+						onNextValue.kids = kidsArr;
+					}
+				}
+				commentsArr[commentsArr.length] = onNextValue
+				observer.onNext(commentsArr)
+			},
+			function(error){
+				observer.error(error)
+			},
+			function(){
+				observer.onCompleted()
 			}
-
-			// parsed item is a item that may or maynot have kids
-			// append this item to comments arr
-			commentsArr[commentsArr.length] = parsedItem
-			return Rx.Observable.return(commentsArr)
-		})
+		)
+	})
 }
 
 function getItemKids(itemID){
@@ -114,20 +122,23 @@ function getItem(itemID){
 }
 
 var arr = []
-getComments('8863', arr, 0, 2)
-		    .subscribe(
-		    	function(onNextValue){
-		    	 	arr = onNextValue
-		    	},
-		    	function(error){
-		    		console.log("Error: "+error)
-		    	},
-		    	function(){
-		    		console.log("Complete")
-		    		//console.log(arr)
-		    	}
-		    )
+getComments('8863', 0, 2)
+	.subscribe(
+		function(onNextValue){
+			arr = onNextValue;
+		},
+		function(error){
 
+		},
+		function(){
+			console.log("Complete")
+			arr.map(function(element){
+				var kids = element.kids
+				if (kids)
+					console.log(kids)
+			})
+		}
+	)
 
 //server.get('/getTopStories', getTopStories); 
 //var port = process.env.PORT || 5000;
