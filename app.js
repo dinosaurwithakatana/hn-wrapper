@@ -51,61 +51,32 @@ function getTopStories(req, res, next){
     );
 }
 
-/*var server = restify.createServer({
-  name: 'myapp',
-  version: '1.0.0'
-});
-server.use(restify.acceptParser(server.acceptable));
-server.use(restify.queryParser());
-server.use(restify.bodyParser());*/
-
 function getComments(parentStoryID, startDepth, endDepth){
-	var commentsArr = []
-	return Rx.Observable.create(function(observer){
-		getItemKids(parentStoryID)
-		// have an fromArrayy of observables with subcomment id's
-		// get item for the id
-		.flatMap(function(item){
-			return getItem(item)				
-		})
-		// flatmap projects function onto each element in arr and returns a single
-		// observable sequence 
-		.subscribe(
-			// onNextValue should have a parsed kids
-			// for the parsed item, get the subcomments arr
-			function(onNextValue){
-				// map each of the elements on kids of 
-				if (onNextValue){
-					var valKids = onNextValue.kids;
-					if (valKids){
-						var kidsArr = []					
-						valKids.map(function(element){
-							var item = getComments(parseInt(element.id), startDepth++, endDepth)
-							kidsArr[kidsArr.length] = item
-						})	
-						// add the onNextValue to commentsArr
-						onNextValue.kids = kidsArr;
-					}
-				}
-				commentsArr[commentsArr.length] = onNextValue
-				observer.onNext(commentsArr)
-			},
-			function(error){
-				observer.error(error)
-			},
-			function(){
-				observer.onCompleted()
-			}
-		)
-	})
+    return getItemKids(parentStoryID)    
+            .flatMap(function(kidID){        
+                if (!kidID)
+                    return Rx.Observable.empty()
+                return getItem(kidID)
+                        .flatMap(function(parsedJSON){
+                            var id = parseInt(parsedJSON.id)
+                            console.log(id)
+                            return getComments(id, startDepth++, endDepth)
+                        })
+            })
 }
 
 function getItemKids(itemID){
 	return getItem(itemID)
-			.map(function(parsedJSON){
+            .filter(function(json){
+                return json != null
+            })
+			.map(function(parsedJSON){                    
 				var kids = parsedJSON['kids']
-				return (kids) ? kids : []
+				return kids;
 			})
+            .filter(function(kids){
+                return kids != null
+            })
 			.flatMap(function(kids){
 				return Rx.Observable.fromArray(kids)
 			})
@@ -114,31 +85,28 @@ function getItemKids(itemID){
 function getItem(itemID){
 	return get(rootUrl+version+'/item/'+itemID+'.json')
 		.map(function(res){
-			return res[1]
+			return res[1];
 		})
+        .filter(function(element){
+            return element != null;
+        })
 		.map(function(rawJSON){
-			return JSON.parse(rawJSON)
+			return JSON.parse(rawJSON);
 		})
 }
 
-var arr = []
-getComments('8863', 0, 2)
-	.subscribe(
-		function(onNextValue){
-			arr = onNextValue;
-		},
-		function(error){
-
-		},
-		function(){
-			console.log("Complete")
-			arr.map(function(element){
-				var kids = element.kids
-				if (kids)
-					console.log(kids)
-			})
-		}
-	)
+getComments('8863', 0, 3)
+		    .subscribe(
+		    	function(onNextValue){
+                     // console.log(onNextValue)
+		    	},
+		    	function(error){
+		    		console.log("Error: "+error)
+		    	},
+		    	function(){
+		    		console.log("Complete")
+		    	}
+		    )
 
 //server.get('/getTopStories', getTopStories); 
 //var port = process.env.PORT || 5000;
