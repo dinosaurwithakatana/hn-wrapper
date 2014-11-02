@@ -51,16 +51,16 @@ function getTopStories(req, res, next){
     );
 }
 
-function getComments(parentStoryID, startDepth, endDepth){
+function getComments(parentStoryID, depth){
+    if (depth == -1)
+        return Rx.Observable.empty()
     return getItemKids(parentStoryID)    
             .flatMap(function(kidID){        
                 if (!kidID)
                     return Rx.Observable.empty()
                 return getItem(kidID)
                         .flatMap(function(parsedJSON){
-                            var id = parseInt(parsedJSON.id)
-                            console.log(id)
-                            return getComments(id, startDepth++, endDepth)
+                            return getComments(parseInt(parsedJSON.id), depth--)
                         })
             })
 }
@@ -95,18 +95,36 @@ function getItem(itemID){
 		})
 }
 
-getComments('8863', 0, 3)
-		    .subscribe(
-		    	function(onNextValue){
-                     // console.log(onNextValue)
-		    	},
-		    	function(error){
-		    		console.log("Error: "+error)
-		    	},
-		    	function(){
-		    		console.log("Complete")
-		    	}
-		    )
+function full_getComments(storyID, depth){
+    // get the root parentStory
+    var comments;
+    return getItem(storyID)
+        .subscribe(
+            function(onNextValue){
+    
+                },
+            function(error){
+
+            },
+            function(){
+
+            }
+        )
+}
+
+console.log(full_getComments('8863', 3))
+// getComments('8863', 3)
+// 		    .subscribe(
+// 		    	function(onNextValue){
+//                      // console.log(onNextValue)
+// 		    	},
+// 		    	function(error){
+// 		    		console.log("Error: "+error)
+// 		    	},
+// 		    	function(){
+// 		    		console.log("Complete")
+// 		    	}
+// 		    )
 
 //server.get('/getTopStories', getTopStories); 
 //var port = process.env.PORT || 5000;
