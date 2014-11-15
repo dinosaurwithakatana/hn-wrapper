@@ -51,35 +51,26 @@ function getTopStories(req, res, next){
     );
 }
 
-function getComments(parentStoryID, depth){
-    if (depth == -1)
-        return Rx.Observable.empty()
-    return getItemKids(parentStoryID)    
-            .flatMap(function(kidID){        
-                if (!kidID)
-                    return Rx.Observable.empty()
-                return getItem(kidID)
-                        .flatMap(function(parsedJSON){
-                            return getComments(parseInt(parsedJSON.id), depth--)
-                        })
-            })
-}
+// Have a full comment/story object here...
+// properly process the kids array of the comment/story object
+function getComments(commentObject){
+    if (!commentObject || !commentObject.kids) 
+        return Rx.Observable.empty();
 
-function getItemKids(itemID){
-	return getItem(itemID)
-            .filter(function(json){
-                return json != null
+    var idx = 0;
+    return Rx.Observable.fromArray(commentObject.kids)
+        .filter(function(kidID){
+            return kidID != null;
+        })
+        .flatMap(function(kidID){
+            return getItem(kidID)
+            .flatMap(function(kidJSON){
+                commentObject.kids[idx] = kidJSON;
+                idx++;
+                console.log(commentObject)                
+                return getComments(kidJSON);
             })
-			.map(function(parsedJSON){                    
-				var kids = parsedJSON['kids']
-				return kids;
-			})
-            .filter(function(kids){
-                return kids != null
-            })
-			.flatMap(function(kids){
-				return Rx.Observable.fromArray(kids)
-			})
+        }) 
 }
 
 function getItem(itemID){
@@ -95,36 +86,26 @@ function getItem(itemID){
 		})
 }
 
-function full_getComments(storyID, depth){
+function full_getComments(storyID){
     // get the root parentStory
-    var comments;
     return getItem(storyID)
-        .subscribe(
-            function(onNextValue){
-    
-                },
-            function(error){
-
-            },
-            function(){
-
-            }
-        )
+            .flatMap(function(parsedItem){
+                return getComments(parsedItem);
+            });
 }
 
-console.log(full_getComments('8863', 3))
-// getComments('8863', 3)
-// 		    .subscribe(
-// 		    	function(onNextValue){
-//                      // console.log(onNextValue)
-// 		    	},
-// 		    	function(error){
-// 		    		console.log("Error: "+error)
-// 		    	},
-// 		    	function(){
-// 		    		console.log("Complete")
-// 		    	}
-// 		    )
+full_getComments('8863')
+		    .subscribe(
+		    	function(onNextValue){
+                    console.log(onNextValue)
+		    	},
+		    	function(error){
+		    		console.log("Error: "+error)
+		    	},
+		    	function(){
+		    		console.log("Complete")
+		    	}
+		    )
 
 //server.get('/getTopStories', getTopStories); 
 //var port = process.env.PORT || 5000;
