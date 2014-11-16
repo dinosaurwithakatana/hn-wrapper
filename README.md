@@ -6,6 +6,6 @@ Defaults to pulling down all 100 stories unless query params are included.
 
 getComments
 ============
-'/getComments?storyID=X'
+`/getComments?storyID=X`
 
 Returns a full comment tree for a given story id.
