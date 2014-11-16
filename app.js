@@ -6,9 +6,11 @@ var version = '/v0'
 var get = Rx.Observable.fromNodeCallback(request);
 
 function getTopStories(req, res, next){
+    var topStoriesIds = [];
     var topStories = [];
     var fromStory = req.query.fromStory;
     var toStory = req.query.toStory;
+
     if(!fromStory){
         fromStory = 0;
     }
@@ -22,7 +24,8 @@ function getTopStories(req, res, next){
         return res[1];  // get the body
      })
     .map(function(res){
-        return JSON.parse(res);     //turn it into a object
+        topStoriesIds = JSON.parse(res);     //turn it into a object
+        return topStoriesIds;
     })
     .flatMap(function(res) {
         return Rx.Observable.fromArray(res);    //map each of the story item ids into an observable
@@ -40,7 +43,7 @@ function getTopStories(req, res, next){
     })
     .subscribe(
             function (x) {
-                topStories[topStories.length] = x;
+                topStories[topStoriesIds.indexOf(x.id)] = x;
             },
             function (err) {
                 console.log('Error:  ' + err);
@@ -143,7 +146,6 @@ server.get(/.*/, restify.serveStatic({
     'directory': '.',
     'default': 'index.html'
 }));
-
 var port = process.env.PORT || 5000;
 server.listen(port, function () {
  console.log('%s listening at %s', server.name, server.url);
