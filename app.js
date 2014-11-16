@@ -51,6 +51,7 @@ function getTopStories(req, res, next){
     );
 }
 
+var comment;
 // Have a full comment/story object here...
 // properly process the kids array of the comment/story object
 function getComments(commentObject){
@@ -66,8 +67,7 @@ function getComments(commentObject){
             return getItem(kidID)
             .flatMap(function(kidJSON){
                 commentObject.kids[idx] = kidJSON;
-                idx++;
-                console.log(commentObject)                
+                idx++;                 
                 return getComments(kidJSON);
             })
         }) 
@@ -88,27 +88,62 @@ function getItem(itemID){
 
 function full_getComments(storyID){
     // get the root parentStory
-    return getItem(storyID)
-            .flatMap(function(parsedItem){
-                return getComments(parsedItem);
-            });
+    var item;
+    return Rx.Observable.create(function(observer){
+        getItem(storyID)
+        .flatMap(function(parsedItem){
+            item = parsedItem;
+            return getComments(parsedItem)
+        })
+        .subscribe(
+            function(onNextValue){
+
+            },
+            function(error){
+                observer.onError(error);
+            },
+            function(){
+                observer.onNext(item);
+                observer.onCompleted();
+            }
+        );
+    });
 }
 
-full_getComments('8863')
-		    .subscribe(
-		    	function(onNextValue){
-                    console.log(onNextValue)
-		    	},
-		    	function(error){
-		    		console.log("Error: "+error)
-		    	},
-		    	function(){
-		    		console.log("Complete")
-		    	}
-		    )
+function comments(req, res, next){
+    var comments;
+    var storyID = req.query.storyID;
+    full_getComments(storyID)
+    .subscribe(
+        function(onNextValue){
+            comments = onNextValue;
+        },
+        function(error){
 
-//server.get('/getTopStories', getTopStories); 
-//var port = process.env.PORT || 5000;
-//server.listen(port, function () {
-//  console.log('%s listening at %s', server.name, server.url);
-//});
+        },
+        function(){
+            res.send(comments.kids);
+        }
+    );
+}
+
+var server = restify.createServer({
+  name: 'hn-wrapper',
+  version: '1.0.0'
+});
+
+server.use(restify.acceptParser(server.acceptable));
+server.use(restify.queryParser());
+server.use(restify.bodyParser());
+
+server.get('/comments', comments);
+server.get('/getTopStories', getTopStories); 
+server.get(/.*/, restify.serveStatic({
+    'directory': '.',
+    'default': 'index.html'
+}));
+
+var port = process.env.PORT || 5000;
+server.listen(port, function () {
+ console.log('%s listening at %s', server.name, server.url);
+});
