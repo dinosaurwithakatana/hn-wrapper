@@ -51,10 +51,9 @@ function getTopStories(req, res, next){
     );
 }
 
-var comment;
 // Have a full comment/story object here...
 // properly process the kids array of the comment/story object
-function getComments(commentObject){
+function getComments_recursive(commentObject){
     if (!commentObject || !commentObject.kids) 
         return Rx.Observable.empty();
 
@@ -68,7 +67,7 @@ function getComments(commentObject){
             .flatMap(function(kidJSON){
                 commentObject.kids[idx] = kidJSON;
                 idx++;                 
-                return getComments(kidJSON);
+                return getComments_recursive(kidJSON);
             })
         }) 
 }
@@ -93,7 +92,7 @@ function full_getComments(storyID){
         getItem(storyID)
         .flatMap(function(parsedItem){
             item = parsedItem;
-            return getComments(parsedItem)
+            return getComments_recursive    (parsedItem)
         })
         .subscribe(
             function(onNextValue){
@@ -110,9 +109,11 @@ function full_getComments(storyID){
     });
 }
 
-function comments(req, res, next){
+function getComments(req, res, next){
     var comments;
     var storyID = req.query.storyID;
+    if (!storyID)
+        res.send('Invalid request (No storyID provided)');
     full_getComments(storyID)
     .subscribe(
         function(onNextValue){
@@ -136,7 +137,7 @@ server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
 
-server.get('/comments', comments);
+server.get('/getComments', getComments);
 server.get('/getTopStories', getTopStories); 
 server.get(/.*/, restify.serveStatic({
     'directory': '.',
