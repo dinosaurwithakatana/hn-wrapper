@@ -83,3 +83,10 @@ This returns the top 2 stories from the front page.
     ]
 
 The `kids` data structure will be populated on the network call for the specific details on that story.
+Defaults to pulling down all 100 stories unless query params are included.
+
+getComments
+============
+`/getComments?storyID=X`
+
+Returns a full comment tree for a given story id.
