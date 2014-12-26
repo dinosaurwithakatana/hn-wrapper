@@ -111,13 +111,14 @@ function getComments(req, res, next){
                         storeKidsForParentID(comments.id, comments.kids)
                         .subscribe(
                             function(onNext){
-                                res.send('200', onNext[COMMENTTREEKEY]);
+                                res.json(onNext[COMMENTTREEKEY]);
                             },
                             function(error){
 
                             },
                             function(){
                                 console.log('Complete')
+                                next();
                             }
                         )
                     }
@@ -125,7 +126,8 @@ function getComments(req, res, next){
             }
             else {
                 console.log('Using cache...');
-                res.send('200', entry[COMMENTTREEKEY]);
+                res.json(entry[COMMENTTREEKEY])
+                next();
             }
         }
     )
