@@ -136,7 +136,9 @@ function getComments(req, res, next){
 var MILLISECONDSINONESECOND = 60*1000;
 
 function shouldRefreshComments(dateLastRefreshedTimeStamp){
-    return (dateLastRefreshedTimeStamp - Date.now() >= MILLISECONDSINONESECOND)
+    console.log('Date last refreshed: ' + dateLastRefreshedTimeStamp);
+    console.log('Date now: ' + Date.now());
+    return (Date.now() - dateLastRefreshedTimeStamp >= MILLISECONDSINONESECOND)
 }
 
 function storeKidsForParentID(parentID, kids){
