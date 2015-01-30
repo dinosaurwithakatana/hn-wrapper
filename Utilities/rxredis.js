@@ -13,7 +13,7 @@ if (process.env["REDISTOGO_URL"]) {
     redisClient = redis.createClient();
 }
 
-var Rx = require('Rx');
+var Rx = require('rx');
 
 // Returns an observable for a redis value for a given key
 function valueForKey(key){
