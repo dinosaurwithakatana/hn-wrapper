@@ -1,7 +1,19 @@
 // Redis related
-var redis   = require('redis');
-var redisClient = redis.createClient();
+var redis;   = 
 
+if (process.env.REDISTOGO_URL) {
+    // TODO: redistogo connection
+	// inside if statement
+	var rtg   = require("url").parse(process.env.REDISTOGO_URL);
+	var redis = require("redis").createClient(rtg.port, rtg.hostname);
+
+	redis.auth(rtg.auth.split(":")[1]);
+
+} else {
+    redis = require("redis");
+}
+
+var redisClient = redis.createClient();
 var Rx = require('Rx');
 
 // Returns an observable for a redis value for a given key

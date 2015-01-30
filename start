@@ -16,4 +16,4 @@ fi
 
 ##
 ## Node
-nodemon app.js
+nodemon server.js
