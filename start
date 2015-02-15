@@ -1,0 +1,19 @@
+#!/bin/bash
+
+##
+## Colors
+red='\033[0;31m'
+default='\033[0m'
+
+##
+## Redis Verification
+redisVerification=`redis-cli ping`
+
+if [[ -z $redisVerification ]]; then
+  echo -e "${red}✗ Is redis running?"
+  exit -1
+fi
+
+##
+## Node
+nodemon server.js
